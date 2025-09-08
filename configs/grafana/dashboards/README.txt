@@ -1,0 +1,1 @@
+Provisioned to /var/lib/grafana/dashboards.

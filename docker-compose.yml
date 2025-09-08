@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  nats:
+    image: nats:2.10
+    command: ["-js","-m","8222"]
+    ports: ["4222:4222","8222:8222"]
+
+  simulator:
+    build: ./services/simulator
+    environment:
+      - NATS_URL=nats://nats:4222
+      - SUBJECT=telemetry.flow
+    depends_on: [nats]
+
+  feature-extractor:
+    build: ./services/feature-extractor
+    environment:
+      - NATS_URL=nats://nats:4222
+      - INFER_URL=http://inferencer:8080/infer
+      - WINDOW_SEC=2
+    depends_on: [nats, inferencer]
+
+  inferencer:
+    build: ./services/inferencer
+    environment:
+      - THRESHOLD=0.7
+      - ALERTMANAGER=http://alertmanager:9093/api/v2/alerts
+    volumes:
+      - ./models:/models
+    depends_on: [alertmanager]
+
+  notifier:
+    build: ./services/notifier
+    ports: ["18080:8080"]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    volumes:
+      - ./configs/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    ports: ["9093:9093"]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command: ["--config.file=/etc/prometheus/prometheus.yml"]
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.1.4
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./configs/grafana/provisioning:/etc/grafana/provisioning
+      - ./configs/grafana/dashboards:/var/lib/grafana/dashboards
+    ports: ["3000:3000"]
+    depends_on: [prometheus]
+
+  loki:
+    image: grafana/loki:2.9.8
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./configs/loki/config.yml:/etc/loki/config.yml
+    ports: ["3100:3100"]
+
+  promtail:
+    image: grafana/promtail:2.9.8
+    volumes:
+      - ./configs/loki/promtail-config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log
+    command: ["--config.file=/etc/promtail/config.yml"]
+    depends_on: [loki]
+
+  trafficgen:
+    build: ./tools/trafficgen
+    volumes:
+      - ./tools/pcaps:/pcaps
+    stdin_open: true
+    tty: true
