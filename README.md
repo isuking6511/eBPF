@@ -70,33 +70,33 @@ Alertmanager로 보내는 페이로드 예:
 메트릭(9102): notifier_alerts_total.
 
 ## configs
-	•	configs/alertmanager/alertmanager.yml
-모든 알림을 http://notifier:8080/alert 로 전달.
-	•	configs/prometheus/prometheus.yml
+- configs/alertmanager/alertmanager.yml
+		모든 알림을 http://notifier:8080/alert 로 전달.
+- configs/prometheus/prometheus.yml
 1초 간격 스크랩. 대상: feature-extractor:9100, inferencer:9101, notifier:9102.
-	•	configs/grafana/provisioning/datasources/datasource.yml
+- configs/grafana/provisioning/datasources/datasource.yml
 데이터소스 등록: Prometheus, Loki.
-	•	configs/grafana/provisioning/dashboards/ids.json
+- configs/grafana/provisioning/dashboards/ids.json
 기본 패널 3개.
-	•	Inference p95 latency(ms):
+- Inference p95 latency(ms):
 histogram_quantile(0.95, sum(rate(infer_latency_ms_bucket[1m])) by (le))
-	•	Alerts received(1m): sum(increase(notifier_alerts_total[1m]))
-	•	Feature window build ms(avg):
+- Alerts received(1m): sum(increase(notifier_alerts_total[1m]))
+- Feature window build ms(avg):
 rate(fe_window_build_ms_sum[1m]) / rate(fe_window_build_ms_count[1m]) * 1000
-	•	configs/loki/config.yml, configs/loki/promtail-config.yml
+- configs/loki/config.yml, configs/loki/promtail-config.yml
 Loki 서버와 Promtail 스크래핑 설정(호스트 /var/log/*.log).
 
-tools
-	•	tools/trafficgen/Dockerfile
+## tools
+- tools/trafficgen/Dockerfile
 tcpreplay, hping3 포함. 수동 부하·pcap 재생용.
 
-models / training
-	•	models/
+## models / training
+- models/
 model.onnx 저장 위치(마운트로 inferencer가 로드).
-	•	training/train.py
-자리표시자. 공개 IDS로 전처리→XGBoost 학습→ONNX 내보내기 흐름 템플릿.
+- training/train.py
+  자리표시자. 공개 IDS로 전처리→XGBoost 학습→ONNX 내보내기 흐름 템플릿.
 
-실행 순서 요약
+## 실행 순서 요약
 
 docker compose up -d --build alertmanager prometheus grafana loki promtail inferencer feature-extractor notifier
 docker compose run --rm simulator python gen.py --mode scan --seconds 10
@@ -105,9 +105,9 @@ docker compose logs -f notifier inferencer feature-extractor
 Grafana 3000, Alertmanager 9093에서 결과 확인.
 
 ## 핵심 환경변수
-	•	NATS_URL 기본 nats://nats:4222
-	•	THRESHOLD 기본 0.7 (민감도)
-	•	ALERTMANAGER 기본 http://alertmanager:9093/api/v2/alerts
-	•	GF_SECURITY_ADMIN_PASSWORD 기본 admin
+- NATS_URL 기본 nats://nats:4222
+- THRESHOLD 기본 0.7 (민감도)
+- ALERTMANAGER 기본 http://alertmanager:9093/api/v2/alerts
+- GF_SECURITY_ADMIN_PASSWORD 기본 admin
 
 ## 이 구조가 “이벤트→피처→점수→알림→지표/대시보드”를 몇 초 내로 끝내는 최소 실행체다.
