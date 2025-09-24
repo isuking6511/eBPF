@@ -110,4 +110,4 @@ Grafana 3000, Alertmanager 9093에서 결과 확인.
 - ALERTMANAGER 기본 http://alertmanager:9093/api/v2/alerts
 - GF_SECURITY_ADMIN_PASSWORD 기본 admin
 
-## 이 구조가 “이벤트→피처→점수→알림→지표/대시보드”를 몇 초 내로 끝내는 최소 실행체다.
+
